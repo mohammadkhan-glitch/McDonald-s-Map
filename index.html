@@ -74,19 +74,17 @@ function mkp(o,m,f){
   var c=f?"#aabbcc":oc(o),s=o>=400?14:o>=200?12:10,b=f?"#ccc":m?"#FFC72C":"rgba(255,255,255,0.9)";
   return L.divIcon({className:"",html:"<div style=\"width:"+s+"px;height:"+s+"px;background:"+c+";border:2px solid "+b+";border-radius:50%;box-shadow:0 0 "+(f?2:6)+"px "+c+"88;cursor:pointer\"></div>",iconSize:[s,s],iconAnchor:[s/2,s/2]});
 }
-var activePoly=null,lk=null,ai=new Set(V.map(function(v){return v.vid;})),MK={};
+var activePolys=[],lk=null,ai=new Set(V.map(function(v){return v.vid;})),MK={};
 function showPoly(v){
-  if(activePoly){activePoly._layers.forEach(function(p){map.removeLayer(p);});activePoly=null;}
+  hidePolys();
   if(!v||!v.r||v.r.length===0)return;
-  var st={color:"#DA291C",weight:2.5,fillColor:oc(v.o),fillOpacity:0.22,interactive:false,fill:true};
-  var layers=v.r.map(function(ring){
-    var p=L.polygon(ring,st);
-    p.addTo(map);
-    return p;
+  var c=oc(v.o);
+  v.r.forEach(function(ring){
+    var p=L.polygon(ring,{color:"#DA291C",weight:2.5,fillColor:c,fillOpacity:0.22,interactive:false,smoothFactor:0});
+    p.addTo(map);activePolys.push(p);
   });
-  activePoly={_layers:layers,remove:function(){layers.forEach(function(p){map.removeLayer(p);});},addTo:function(){}};
 }
-function hidePoly(){if(activePoly&&!lk){activePoly._layers.forEach(function(p){map.removeLayer(p);});activePoly=null;}}
+function hidePolys(){activePolys.forEach(function(p){map.removeLayer(p);});activePolys=[];}
 V.forEach(function(v){
   try{
     var mk=L.marker([v.p.lat,v.p.lng],{icon:mkp(v.o,v.m,false),zIndexOffset:Math.round(v.o)});
@@ -107,12 +105,12 @@ V.forEach(function(v){
       +"<div style=\"background:#f1f5f9;padding:5px 12px;font-size:10px;color:#64748b;text-align:center\">Click to lock &middot; click again to unlock</div></div>";
     mk.bindTooltip(tip,{direction:"top",offset:[0,-8],opacity:1,className:"leaflet-tooltip"});
     mk.on("mouseover",function(){if(!lk)showPoly(v);});
-    mk.on("mouseout",function(){if(!lk)hidePoly();});
-    mk.on("click",function(){if(lk===v.vid){lk=null;hidePoly();}else{lk=v.vid;showPoly(v);hli(v.vid);}});
+    mk.on("mouseout",function(){if(!lk)hidePolys();});
+    mk.on("click",function(){if(lk===v.vid){lk=null;hidePolys();}else{lk=v.vid;showPoly(v);hli(v.vid);}});
     mk.addTo(map);MK[v.vid]=mk;
   }catch(e){console.error("vendor "+v.vid,e);}
 });
-map.on("click",function(e){if(e.originalEvent.target===map._container){lk=null;hidePoly();}});
+map.on("click",function(e){if(e.originalEvent.target===map._container){lk=null;hidePolys();}});
 var LE=document.getElementById("vl");
 function bl(vl){
   LE.innerHTML="";
@@ -122,7 +120,7 @@ function bl(vl){
     el.innerHTML="<div class=\"vd\" style=\"background:"+oc(v.o)+"\"></div><div class=\"vin\"><div class=\"vn\">"+v.n+(v.m?"<span class=\"mb\">MULTI</span>":"")+"</div><div class=\"vm\">ID: "+v.vid+" - DT:"+v.d+"m AWT:"+v.w+"%</div></div><div class=\"vo\">"+v.o.toFixed(0)+"</div>";
     el.addEventListener("click",function(){lk=v.vid;showPoly(v);hli(v.vid);map.flyTo([v.p.lat,v.p.lng],13,{duration:0.8});MK[v.vid].openTooltip();});
     el.addEventListener("mouseenter",function(){if(!lk)showPoly(v);});
-    el.addEventListener("mouseleave",function(){if(!lk)hidePoly();});
+    el.addEventListener("mouseleave",function(){if(!lk)hidePolys();});
     LE.appendChild(el);
   });
 }
@@ -170,7 +168,7 @@ function af(){
     if(a){if(!map.hasLayer(MK[v.vid]))MK[v.vid].addTo(map);MK[v.vid].setIcon(mkp(v.o,v.m,false));}
     else{if(map.hasLayer(MK[v.vid]))map.removeLayer(MK[v.vid]);}
   });
-  if(lk&&!ai.has(lk)){lk=null;hidePoly();}
+  if(lk&&!ai.has(lk)){lk=null;hidePolys();}
   bl(ml);us(ml);
   if(ml.length>0&&ml.length<=10)map.fitBounds(ml.map(function(v){return [v.p.lat,v.p.lng];}),{padding:[40,40],maxZoom:14});
 }
@@ -178,7 +176,7 @@ function clr(){
   document.getElementById("fn").value="";document.getElementById("fi").value="";
   rmn.value=0;rmx.value=700;
   document.getElementById("fmn").value="";document.getElementById("fmx").value="";
-  usl();lk=null;hidePoly();af();
+  usl();lk=null;hidePolys();af();
 }
 </script>
 </body>
