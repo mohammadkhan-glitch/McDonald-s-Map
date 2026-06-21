@@ -76,13 +76,17 @@ function mkp(o,m,f){
 }
 var activePoly=null,lk=null,ai=new Set(V.map(function(v){return v.vid;})),MK={};
 function showPoly(v){
-  if(activePoly){map.removeLayer(activePoly);activePoly=null;}
+  if(activePoly){activePoly._layers.forEach(function(p){map.removeLayer(p);});activePoly=null;}
   if(!v||!v.r||v.r.length===0)return;
-  var st={color:"#DA291C",weight:2.5,fillColor:oc(v.o),fillOpacity:0.22,interactive:false};
-  var layers=v.r.map(function(ring){return L.polygon(ring,st);});
-  activePoly=L.layerGroup(layers);activePoly.addTo(map);
+  var st={color:"#DA291C",weight:2.5,fillColor:oc(v.o),fillOpacity:0.22,interactive:false,fill:true};
+  var layers=v.r.map(function(ring){
+    var p=L.polygon(ring,st);
+    p.addTo(map);
+    return p;
+  });
+  activePoly={_layers:layers,remove:function(){layers.forEach(function(p){map.removeLayer(p);});},addTo:function(){}};
 }
-function hidePoly(){if(activePoly&&!lk){map.removeLayer(activePoly);activePoly=null;}}
+function hidePoly(){if(activePoly&&!lk){activePoly._layers.forEach(function(p){map.removeLayer(p);});activePoly=null;}}
 V.forEach(function(v){
   try{
     var mk=L.marker([v.p.lat,v.p.lng],{icon:mkp(v.o,v.m,false),zIndexOffset:Math.round(v.o)});
